@@ -15,11 +15,24 @@ jobs:
 
       - name: Extract Project Files
         run: |
-          unzip -o voicetype-pro1.zip
-          if [ -d "voicetype-pro1" ]; then
-            cp -rf voicetype-pro1/* .
-            cp -rf voicetype-pro1/.* . 2>/dev/null || true
+          if [ -f "voicetype-pro1.zip" ]; then
+            unzip -o voicetype-pro1.zip
+            if [ -d "voicetype-pro1" ]; then
+              cp -rf voicetype-pro1/* .
+              cp -rf voicetype-pro1/.* . 2>/dev/null || true
+            fi
+          elif [ -f "voicetype-pro.zip" ]; then
+            unzip -o voicetype-pro.zip
+            if [ -d "voicetype-pro" ]; then
+              cp -rf voicetype-pro/* .
+              cp -rf voicetype-pro/.* . 2>/dev/null || true
+            fi
           fi
+
+      - name: Fix Gemini Audio Payload Bug
+        run: |
+          sed -i 's/"inline_data"/"inlineData"/g' app/src/main/java/com/example/GeminiTranscriber.kt
+          sed -i 's/"mime_type"/"mimeType"/g' app/src/main/java/com/example/GeminiTranscriber.kt
 
       - name: Ensure Debug Keystore is Disabled
         run: |
