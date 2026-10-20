@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Project Files
+        run: |
+          unzip -o voicetype-pro1.zip
+          if [ -d "voicetype-pro1" ]; then
+            cp -rf voicetype-pro1/* .
+            cp -rf voicetype-pro1/.* . 2>/dev/null || true
+          fi
+
+      - name: Ensure Debug Keystore is Disabled
+        run: |
+          sed -i 's/^\s*signingConfig = signingConfigs.getByName("debugConfig")/\/\/ signingConfig = signingConfigs.getByName("debugConfig")/g' app/build.gradle.kts
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version 9.3.1
+          chmod +x gradlew
+
+      - name: Prepare Environment File
+        run: |
+          if [ -f ".env.example" ]; then
+            cp .env.example .env
+          else
+            echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
+          fi
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoiceTypePro-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+          
